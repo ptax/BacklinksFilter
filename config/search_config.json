@@ -1,0 +1,65 @@
+{
+ "id": 1,
+ "method": "SerpstatBacklinksProcedure.getOutlinks",
+ "params": {
+     "query": "serpstat.com",
+     "searchType": "domain",
+     "sort": "url_from",
+     "order": "desc",
+     "page": 1,
+     "size": 2,
+     "linkPerDomain": 1,
+     "complexFilter": [
+            [
+                {
+                    "field": "url_from",
+                    "compareType": "notContains",
+                    "value": [
+                        "7654765"
+                    ]
+                },
+                {
+                    "field": "link_nofollow",
+                    "compareType": "contains",
+                    "value": [
+                        "follow",
+                        "nofollow",
+                        "ugc",
+                        "sponsored"
+                    ]
+                },
+                {
+                    "field": "anchor",
+                    "compareType": "notContains",
+                    "value": [
+                        "лопспрол"
+                    ]
+                },
+                {
+                    "field": "check",
+                    "compareType": "lte",
+                    "value": [
+                        "1.1.2030"
+                    ]
+                },
+                {
+                    "field": "links_external",
+                    "compareType": "between",
+                    "value": [
+                        "1",
+                        "500"
+                    ]
+                }
+            ],
+            [
+                {
+                    "field": "links_external",
+                    "compareType": "lte",
+                    "value": [
+                        "800"
+                    ]
+                }
+            ]
+        ]
+  }
+}
