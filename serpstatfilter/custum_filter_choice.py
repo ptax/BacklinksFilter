@@ -14,7 +14,7 @@ def custum_filter_choice(root,num_colum,num_row):
     # Adding combobox drop down list
     CF_Filter_Chosen_Select['values'] = ('{url_from} - the referring page',
                              '{anchor} - the anchor of the backlink',
-                            '{links_external} - the number of external links from the referring page',
+                             '{links_external} - the number of external links from the referring page',
                              '{link_type} - the type of the backlink. Possible values: text, redirect, iframe, form, canonical, rss, alternate, image'
                               )
     '{link_nofollow} - link attributes. Possible values: follow, nofollow, ugc, sponsored',
