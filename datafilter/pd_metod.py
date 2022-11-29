@@ -8,13 +8,23 @@ def drop_dublicates(my_df,colums):
     df_new = my_df.drop_duplicates(subset=colums, keep='first')
     return df_new
 
-
+import re
 def drop_string(my_df,colums,black_list_file):
     with open(black_list_file, 'r') as f:
         black_list = f.read().splitlines()
+    list_black_list = []
     black_list = set(black_list)
-    df_new = my_df[my_df[colums].str.contains('|'.join(black_list)) == False]
-    df_new = df_new.reset_index(drop=True)
+
+    for word in black_list:
+        if '?' in word:
+            word = word.replace('?', '\?')
+            list_black_list.append(word)
+        else:
+            list_black_list.append(word)
+
+
+    df_new = my_df[my_df[colums].str.contains('|'.join(list_black_list),  regex=True)== False]
+    #df_new = my_df([my_df[colums].str.contains('|'.join(black_list)) == False], regex=False)
     return df_new
 
 
@@ -48,7 +58,15 @@ def white_string(my_df,colums,black_list_file):
     with open(black_list_file, 'r') as f:
         black_list = f.read().splitlines()
     black_list = set(black_list)
-    df_new = my_df[my_df[colums].str.contains('|'.join(black_list)) == True]
+
+    white_list = []
+    for word in black_list:
+        if '?' in word:
+            word = word.replace('?', '\?')
+            white_list.append(word)
+        else:
+            white_list.append(word)
+    df_new = my_df[my_df[colums].str.contains('|'.join(white_list)) == True]
     df_new = df_new.reset_index(drop=True)
     return df_new
 
