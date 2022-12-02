@@ -2,14 +2,18 @@ import tkinter as tk
 from tkinter import ttk, SUNKEN
 from tkinter.filedialog import askopenfilename
 import api.parser_dialog as parser_dialog
-#import api.get_data as get_data
+# import api.get_data as get_data
 import requests
 import json
 import pandas as pd
 import time
 import sys
 import threading
+from threading import Thread
+import datetime
 
+today_date_end_minutes = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+prefix = str(today_date_end_minutes).replace(" ", "_").replace("-", "_").replace(":", "_")
 
 Serp_Error = {
     '400': 'Query required: The query parameter (domain, URL) was not specified;',
@@ -49,6 +53,7 @@ Serp_Error = {
     '32117': 'Field value is required: the field for filtering is not set;',
     '32117': 'Not allowed params for filter: invalid params for filtering.'}
 
+
 def _on_frame_configure(self, event=None):
     serp_canvas.configure(scrollregion=serp_canvas.bbox("all"))
 
@@ -71,10 +76,9 @@ def serpastat_token():
         TOKEN = json.loads(token.read())
     return TOKEN
 
+def get_new_backlinks(save_file, colum_comanid, input_file_name):
 
-
-
-def get_new_backlinks(save_file,colum_comanid,input_file_name):
+    save_file = save_file +'_' + prefix
     time.sleep(3)
     api_url = f"https://api.serpstat.com/v4/?token={TOKEN['token']}".strip()
     headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
@@ -82,10 +86,11 @@ def get_new_backlinks(save_file,colum_comanid,input_file_name):
         response = requests.post(api_url, data=json.dumps(SEARCH_JSON), headers=headers)
         data = json.loads(response.text)
     except requests.exceptions.RequestException as e:
-        reserv_file = input_file_name.replace('.csv', '_reserv.csv')
-        DFInput.to_csv(reserv_file, index=False, mode='w', header=True)
-        print ('Problem with connect',e)
+        backup_file = input_file_name.replace('.csv', f'_backup_{prefix}.csv')
+        DFInput.to_csv(backup_file, index=False, mode='w', header=True)
+        print('Problem with connect', e)
     try:
+        log_info = data['result']['summary_info']
         DFserpstat = pd.DataFrame(data['result']['data'])
         DFserpstat['Urls'] = SEARCH_JSON['params']['query']
         DFserpstat['Campaign ID'] = colum_comanid
@@ -95,7 +100,6 @@ def get_new_backlinks(save_file,colum_comanid,input_file_name):
             DFserpstat.to_csv(save_file, index=False, mode='a', header=False)
     except KeyError as key_error:
         serpstat_eror = str(data['error']['message']) + 'Num Mistake ' + str(data['error']['code'])
-        #parser_dialog.log_parser.insert('0.0', "Err: " + str(serpstat_eror) + "\n")
         try:
             num_code = str(data['error']['code'])
             answer = Serp_Error[num_code]
@@ -103,22 +107,20 @@ def get_new_backlinks(save_file,colum_comanid,input_file_name):
             num_code = None
             answer = None
         if answer:
-            log_no_data = str(SEARCH_JSON['params']['query'])   + ';' +  str(colum_comanid) + ';' + str(data['error']['message']) + ';' + str(data['error']['code'])
+            log_no_data = str(SEARCH_JSON['params']['query']) + ';' + str(colum_comanid) + ';' + str(
+                data['error']['message']) + ';' + str(data['error']['code'])
             log_no_data = f"Err; {num_code};{answer}; {str(SEARCH_JSON['params']['query'])}; {str(colum_comanid)} \n"
             parser_dialog.erro_serpstat.insert('end', log_no_data + "\n")
             parser_dialog.erro_serpstat.see('end')
             parser_dialog.erro_serpstat.update_idletasks()
 
-            with open('log_no_data.txt', 'a') as log:
+            with open(f'{prefix}_problem_files.txt', 'a') as log:
                 log.write(log_no_data + '\n')
         else:
-            reserv_file = input_file_name.replace('.csv', '_reserv.csv')
-            DFInput.to_csv(reserv_file, index=False, mode='w', header=True)
+            backup_file = input_file_name.replace('.csv', f'_backup_{prefix}.csv')
+            DFInput.to_csv(backup_file, index=False, mode='w', header=True)
             raise KeyError(f"{serpstat_eror}")
 
-
-
-#get_new_backlinks(MyUrl=MyUrl,searchType='url')
 
 def search_query_in_file(file_name):
     with open(file_name) as file:
@@ -127,7 +129,7 @@ def search_query_in_file(file_name):
     return SEARCH_JSON
 
 
-def read_input_file(input_file_name,save_file,sep_p):
+def read_input_file(input_file_name, save_file, sep_p):
     global DFInput
 
     DFInput = pd.read_csv(input_file_name, sep=sep_p)
@@ -136,42 +138,38 @@ def read_input_file(input_file_name,save_file,sep_p):
         my_url = values[0]
         campaign_id = values[1]
         SEARCH_JSON['params']['query'] = my_url
-        log_print =  str(data) + ' ' + str(my_url)
-        print (log_print)
+        log_print = str(data) + ' ' + str(my_url)
+        print(log_print)
 
-        parser_dialog.log_parser.insert('end', "URL: " + str(log_print) + "\n")
+        parser_dialog.log_parser.insert('end', "URL: " + str(log_print)  + "\n")
         parser_dialog.log_parser.see('end')
         parser_dialog.log_parser.update_idletasks()
-
-        get_new_backlinks(save_file,campaign_id,input_file_name)
+        get_new_backlinks(save_file, campaign_id, input_file_name)
         DFInput.drop(data, axis=0, inplace=True)
-        #sep_win.update_idletasks()
+        # sep_win.update_idletasks()
         sep_win.update()
         sep_win.after(1000)
 
 
-
 def run():
-
     serpastat_token()
-    #parser_dialog.log_parser.insert('0.0', "Token: " + str(TOKEN["token"]) + "\n" )
+    # parser_dialog.log_parser.insert('0.0', "Token: " + str(TOKEN["token"]) + "\n" )
     input_file_name = parser_dialog.label_input_file_name['text']
     json_file_name = parser_dialog.label_input_json_name['text']
     sep_p = parser_dialog.sep_parser.get()
     save_file = input_file_name.replace('.csv', '_result.csv')
     search_query_in_file(json_file_name)
-    t = read_input_file(input_file_name,save_file,sep_p)
+    read_input_file(input_file_name, save_file, sep_p)
 
 
 
 
-from threading import Thread
 def serpstat_parser_interfeice():
     global sep_win
     sep_win = tk.Tk()
     sep_win.title("Parser Backlinks")
     sep_win.configure(background="light gray")
-    frame_serpstat = tk.Frame(sep_win, borderwidth=2, relief=SUNKEN,  bg="#EBEBEB")
+    frame_serpstat = tk.Frame(sep_win, borderwidth=2, relief=SUNKEN, bg="#EBEBEB")
     frame_serpstat.grid(column=0, row=0, sticky='NSEW')
     serp_scrollbar = tk.Scrollbar(frame_serpstat)
     serp_scrollbar.grid(column=1, row=0, sticky='NS')
@@ -179,7 +177,7 @@ def serpstat_parser_interfeice():
     serp_canvas = tk.Canvas(frame_serpstat, bd=0, yscrollcommand=serp_scrollbar.set, width=800, height=500)
     serp_canvas.grid(column=0, row=0, sticky='NSEW')
     serp_scrollbar.config(command=serp_canvas.yview)
-    serp_file_frame = tk.Frame(serp_canvas, borderwidth=2, relief=SUNKEN,  bg="#EBEBEB")
+    serp_file_frame = tk.Frame(serp_canvas, borderwidth=2, relief=SUNKEN, bg="#EBEBEB")
     serp_canvas.create_window(0, 0, window=serp_file_frame, anchor='nw')
 
     ttk.Label(serp_file_frame, text="Parser Backlinks",
@@ -188,19 +186,16 @@ def serpstat_parser_interfeice():
 
     parser_dialog.get_input(serp_file_frame, num_colum=0, num_row=4)
 
-    #button2 = tk.Button(serp_file_frame, text='Run', command=run, bg='brown', fg='white')
-
-    button2 = tk.Button(serp_file_frame, text='Run', command=lambda:Thread(target=run).start(), bg='brown', fg='white')
+    # button2 = tk.Button(serp_file_frame, text='Run', command=run, bg='brown', fg='white')
+    #var = tk.IntVar()
+    button2 = tk.Button(serp_file_frame, text='Run', command=lambda: Thread(target=run).start(), bg='brown', fg='white')
     button2.grid(column=0, row=9, padx=15, pady=5, sticky='w')
-
-
-
-
+    #button2.wait_variable(var)
     serp_file_frame.bind("<Configure>", _on_frame_configure)
     serp_file_frame.mainloop()
 
 
 if __name__ == "__main__":
     serpstat_parser_interfeice()
-    #t = '32015'
-    #print (Serp_Error[t])
+    # t = '32015'
+    # print (Serp_Error[t])
