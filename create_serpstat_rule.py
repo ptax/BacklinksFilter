@@ -104,8 +104,7 @@ class FrameSearch(Tk):
             size = 100
             page = int(self.num_link.get()) // max_size
 
-        print('order_sort', self.order_sort.get())
-        print('dict_complex_filter', self.dict_complex_filter)
+
         list_or = []
         list_and = []
         link_per_domain = {self.clear_params_select(self.link_domain.get())}
