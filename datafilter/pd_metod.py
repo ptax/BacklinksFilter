@@ -12,19 +12,9 @@ import re
 def drop_string(my_df,colums,black_list_file):
     with open(black_list_file, 'r') as f:
         black_list = f.read().splitlines()
-    list_black_list = []
     black_list = set(black_list)
-
-    for word in black_list:
-        if '?' in word:
-            word = word.replace('?', '\?')
-            list_black_list.append(word)
-        else:
-            list_black_list.append(word)
-
-
-    df_new = my_df[my_df[colums].str.contains('|'.join(list_black_list),  regex=True)== False]
-    #df_new = my_df([my_df[colums].str.contains('|'.join(black_list)) == False], regex=False)
+    safe_matches = [re.escape(m) for m in black_list]
+    df_new = my_df[my_df[colums].str.contains('|'.join(safe_matches),  regex=True)== False]
     return df_new
 
 
@@ -58,15 +48,8 @@ def white_string(my_df,colums,black_list_file):
     with open(black_list_file, 'r') as f:
         black_list = f.read().splitlines()
     black_list = set(black_list)
-
-    white_list = []
-    for word in black_list:
-        if '?' in word:
-            word = word.replace('?', '\?')
-            white_list.append(word)
-        else:
-            white_list.append(word)
-    df_new = my_df[my_df[colums].str.contains('|'.join(white_list)) == True]
+    safe_matches = [re.escape(m) for m in black_list]
+    df_new = my_df[my_df[colums].str.contains('|'.join(safe_matches)) == True]
     df_new = df_new.reset_index(drop=True)
     return df_new
 
@@ -96,40 +79,89 @@ def white_root_domain(my_df,colums):
     df_new = my_df[my_df[colums].str.contains('|'.join(list_root_domain)) == True]
     return df_new
 
-def search_domain_duplicate(my_df,colums):
+
+def look_domain_duplicates(my_df,colums):
     my_df['root_domain'] = my_df[colums].apply(lambda x: urlparse(x).hostname)
-    my_df = my_df[my_df['root_domain'].value_counts()[my_df['root_domain']].values > 1]
-    #print (my_df)
+    my_df[my_df['root_domain'].value_counts()[my_df['root_domain']].values > 1]
+    my_df['root_domain'].unique()
+    return my_df
 
-    list_white_string = ['page']
-    df_new = my_df[my_df[colums].str.contains('|'.join(list_white_string)) == True]
-    df_new = df_new.drop(axis=0, index=16, inplace=False)
-    #print (df_new)
-    print (df_new.head())
+def white_list_duplicates(my_df,colums,white_list_file):
+    with open(white_list_file, 'r') as f:
+        white_list = f.read().splitlines()
+    white_list = set(white_list)
+    safe_matches = [re.escape(m) for m in white_list]
+    my_df = my_df[my_df[colums].str.contains('|'.join(safe_matches)) == True]
+    return my_df
 
-    #with open(black_list_file, 'r') as f:
-        #black_list = f.read().splitlines()
-    #black_list = set(black_list)
-    #df_new = my_df[my_df[colums].str.contains('|'.join(black_list)) == True]
-    #print (my_df.head(40))
-    #my_df['url_from'] =
-    #my_df['root_domain'].value_counts()
-    #df_new = my_df[my_df[colums].str.contains('|'.join(list_root_domain)) == True]
-    #row = len(df_new)
-    #print ('row',row)
 
-    #return df_new
+def search_domain_duplicate(my_df,colums,duplicates_urls_white):
+    with open(duplicates_urls_white, 'r') as f:
+        white_list = f.read().splitlines()
+    list_white_string = set(white_list)
+
+    del_id_list = []
+    white_id_list = []
+    change_id_list = []
+    white_domain = []
+    my_df['root_domain'] = my_df[colums].apply(lambda x: urlparse(x).hostname)
+    root_domain_duplicate = my_df[my_df['root_domain'].value_counts()[my_df['root_domain']].values > 1]
+
+    safe_matches = [re.escape(m) for m in list_white_string]
+
+    white_list_domain = root_domain_duplicate[root_domain_duplicate[f'{colums}'].str.contains('|'.join(safe_matches)) == True]
+
+    white_only_one = white_list_domain[white_list_domain['root_domain'].value_counts()[white_list_domain['root_domain']].values == 1]
+    for index, row in white_only_one.iterrows():
+        white_id_list.append(index)
+
+    white_more_than_one = white_list_domain[white_list_domain['root_domain'].value_counts()[white_list_domain['root_domain']].values > 1]
+
+    c = 0
+    if len(white_more_than_one) > 1:
+        for index, row in white_more_than_one.iterrows():
+            c += 1
+            if c == 1:
+                white_id_list.append(index)
+            else:
+                del_id_list.append(index)
+
+    for id_row in white_id_list:
+        white_domain.append(urlparse(root_domain_duplicate.loc[id_row, colums]).hostname)
+
+    white_domain_df = root_domain_duplicate[root_domain_duplicate[f'{colums}'].str.contains('|'.join(white_domain)) == True]
+
+    for index, row in white_domain_df.iterrows():
+        if index not in white_id_list:
+            del_id_list.append(index)
+
+
+    for index, row in root_domain_duplicate.iterrows():
+        if index not in white_id_list:
+            change_id_list.append(index)
+
+    for id_row in change_id_list:
+        my_df.at[id_row, colums] = ' https://' + str(urlparse(my_df.loc[id_row, colums]).hostname)
+    #
+    my_df.drop(del_id_list, inplace=True)
+    my_df.drop(columns=['root_domain'], inplace=True)
+
+    my_df = drop_dublicates(my_df, colums)
+    return my_df
 
 if __name__ == '__main__':
     df = pd.read_csv(r'C:\Users\o.trukhanskyi\Desktop\BacklinksFilter\data_3.csv')
     black_list_file = r'C:\Users\o.trukhanskyi\Desktop\BacklinksFilter\black_list.txt'
+    white_list_file = r'C:\Users\o.trukhanskyi\Desktop\BacklinksFilter\white_list.txt'
     colums = 'url_from'
 
     num = 3
     symbol = '&'
     min_l = 41
     max_l = 43
+    list_white_string = ['?page=', 'bere-da-solo-da-giovane-er']
 
-    df = search_domain_duplicate(df,colums)
-    print(df)
+    df = search_domain_duplicate(df,colums,list_white_string)
+
+    print(df.head(50))
 

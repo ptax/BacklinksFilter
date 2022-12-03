@@ -43,6 +43,10 @@ def Metod_Select_White_Root_Domain(root, num_colum, num_row):
     check_root_domain_white.set(0)
     return check_root_domain_white
 
+
+
+
+
 def Metod_Select_Max_Char_Str(root, num_colum, num_row):
     ttk.Label(root, text=f"Remove URL MAX_NUMBER_OF_CHARACTERS",
               font=("Times New Roman", 10)).grid(column=num_colum,

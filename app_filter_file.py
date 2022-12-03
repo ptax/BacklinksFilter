@@ -42,6 +42,8 @@ def get_seting_filter(win_file_frame):
 
     white_list_file_name = choice_black_list.Puth_Whitelist.get()
 
+    duplicates_urls_white = choice_black_list.Whitelist_multiple_urls.get()
+    print ('duplicates_urls_white',duplicates_urls_white)
 
     link_min_name = choice_column.link_min.get()
     link_max_name = choice_column.link_max.get()
@@ -86,8 +88,12 @@ def get_seting_filter(win_file_frame):
     if int(root_domain_white_name) == 1:
         MY_DATA = pd_metod.white_root_domain(MY_DATA, colum_name)
         open_file.inputtxt.insert('0.0', f"Only root domain {datetime.datetime.now()}  \n")
+    if len(duplicates_urls_white) >= 5:
+        MY_DATA = pd_metod.search_domain_duplicate(MY_DATA, colum_name, duplicates_urls_white)
+        open_file.inputtxt.insert('0.0', f"Removing Urls duplicates {datetime.datetime.now()} \n")
+
     save_file_button = tk.Button(win_file_frame, text='Save file', command=lambda:save_result(MY_DATA), bg='green', fg='white')
-    save_file_button.grid(column=0, row=18, padx=123, pady=15, sticky='w')
+    save_file_button.grid(column=0, row=19, padx=123, pady=15, sticky='w')
 
 
 
@@ -157,9 +163,12 @@ def filter_interface():
 
     filter_choice.Metod_Select_White_Root_Domain(win_file_frame, num_colum=0, num_row=17)
 
+    choice_black_list.Metod_Dublicates_Url(win_file_frame, num_colum=0, num_row=18)
+
+
 
     save_filter_button = tk.Button(win_file_frame, text='Apply the filter', command=lambda : get_seting_filter(win_file_frame), bg='orange', fg='green')
-    save_filter_button.grid(column=0, row=18, padx=15, pady=20, sticky='w')
+    save_filter_button.grid(column=0, row=19, padx=15, pady=20, sticky='w')
 
 
     win_file_frame.bind("<Configure>", _on_frame_configure)
