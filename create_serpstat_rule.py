@@ -100,7 +100,7 @@ class FrameSearch(Tk):
         if int(self.num_link.get()) <= 100:
             page = 1
             size = int(self.num_link.get())
-        elif self.num_link.get() >= 101:
+        elif int(self.num_link.get()) >= 101:
             size = 100
             page = int(self.num_link.get()) // max_size
 
@@ -324,7 +324,7 @@ if __name__ == "__main__":
 
     link_per_domain_select = '{0} - in the ascending order', '{1} - in the descending order'
     param_search_type_select = '{url} - the specific URL (site.com/path/)', '{part_url} - URL starts with (site.com/path/*)', '{domain} - only domain (site.com)', '{domain_with_subdomains} - domain with subdomains (subdomain.site.com)'
-    params_sort_select = '{check} - date of the first detection', '{url_from} - the referring page', '{anchor} - the anchor of the backlink', '{link_nofollow} - link attributes', '{links_external} - a number of outgoing links from the referring page', '{link_type} - the type of incoming link', '{url_to} - a landing page'
+    params_sort_select = '{domain_rank} - an indicator of domain authority on a scale from 0 to 100'	, '{check} - date of the first detection', '{url_from} - the referring page', '{anchor} - the anchor of the backlink', '{link_nofollow} - link attributes', '{links_external} - a number of outgoing links from the referring page', '{link_type} - the type of incoming link', '{url_to} - a landing page'
     order_sort_select = '{asc} - in the ascending order', '{desc} - in the descending order'
 
     complex_filter_select = '{url_from} - the referring page', '{anchor} - the anchor of the backlink','{link_nofollow} - link attributes. Possible values: follow, nofollow, ugc, sponsored', '{links_external} - the number of external links from the referring page', '{link_type} - the type of the backlink. Possible values: text, redirect, iframe, form, canonical, rss, alternate, image',  '{check} - link detection date. Value format: DD.MM.YYYY (01.01.2001)'

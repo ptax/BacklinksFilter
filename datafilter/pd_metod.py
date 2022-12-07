@@ -14,7 +14,7 @@ def drop_string(my_df,colums,black_list_file):
         black_list = f.read().splitlines()
     black_list = set(black_list)
     safe_matches = [re.escape(m) for m in black_list]
-    df_new = my_df[my_df[colums].str.contains('|'.join(safe_matches),  regex=True)== False]
+    df_new = my_df[my_df[colums].str.contains('|'.join(safe_matches),  regex=True) == False]
     return df_new
 
 
@@ -36,9 +36,9 @@ def drop_symbol_domain(my_df,colums,symbol,num):
         domain_split = domain.split(symbol)
         domain_split = list(filter(None, domain_split))
         if len(domain_split) >= int(num)+1:
-            list_root_domain.append('^'+domain+'$')
+            list_root_domain.append('^'+domain.replace(r'?','\?')+'$')
     if len(list_root_domain) > 0:
-        df_new = my_df[my_df[colums].str.contains('|'.join(list_root_domain)) == False]
+        df_new = my_df[my_df[colums].str.contains('|'.join(list_root_domain),  regex=True )  == False]
         return df_new
     else:
         return my_df
@@ -55,8 +55,9 @@ def white_string(my_df,colums,black_list_file):
 
 
 def drop_line_max_char(my_df,colums, max_char):
-    df_new = my_df[my_df[colums].str.len() <= int(max_char)]
-    return df_new
+    max_char = int(max_char) - 1
+    my_df = my_df[my_df[colums].str.len() < max_char]
+    return my_df
 
 
 
